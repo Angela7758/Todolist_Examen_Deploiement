@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../styles/app.css"; 
+import "../styles/App.css"; 
 
 export default function CategorySelector({
   categories,
