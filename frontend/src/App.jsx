@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import TaskForm from "./components/TaskForm.jsx";
 import TaskList from "./components/TaskList.jsx";
 import CategoryForm from "./components/CategoryForm.jsx";
-import "./styles/App.css";
+import CategorySelector from "./components/CategorySelector.jsx";
 
 import {
   fetchTasks,
@@ -11,61 +11,71 @@ import {
   createCategory,
   patchTask,
   deleteTask,
+  deleteCategory,
 } from "./api";
+
+import "./styles/App.css";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
-  const [cats, setCats] = useState([]); 
-  
+  const [cats, setCats] = useState([]);
+
   const [taskErrors, setTaskErrors] = useState({});
   const [catErrors, setCatErrors] = useState({});
 
-  const [filterCat, setFilterCat] = useState(""); 
+  const [filterCat, setFilterCat] = useState("");
 
-  // chargement au début
-  useEffect(() => {
+  // Charger les données au démarrage
+  const loadCategories = () => {
     fetchCategories()
-      .then((r) => {
-        setCats(r.data);
-      })
-      .catch(() => {
-        console.log("Erreur categories"); 
-      });
+      .then((res) => setCats(res.data))
+      .catch(() => console.log("Erreur chargement catégories"));
+  };
 
+  const loadTasks = () => {
     fetchTasks()
-      .then((r) => setTasks(r.data))
-      .catch(() => console.log("Erreur tasks"));
+      .then((res) => setTasks(res.data))
+      .catch(() => console.log("Erreur chargement tâches"));
+  };
+
+  useEffect(() => {
+    loadCategories();
+    loadTasks();
   }, []);
 
-  // ajouter catégorie
+  // Ajouter une catégorie
   const addCategory = (name) => {
-    setCatErrors({}); 
-    createCategory({ name: name })
-      .then((res) => {
-        setCats(cats.concat(res.data)); 
-      })
+    setCatErrors({});
+    createCategory({ name })
+      .then((res) => setCats([...cats, res.data]))
       .catch((e) => {
-        // pas super propre mais ça marche
-        if (e.response && e.response.data) {
-          setCatErrors(e.response.data);
-        }
+        if (e.response) setCatErrors(e.response.data);
       });
   };
 
-  // ajouter tâche
+  // Supprimer une catégorie
+  const handleDeleteCategory = (id) => {
+    if (!window.confirm("Supprimer cette catégorie ?")) return;
+
+    deleteCategory(id)
+      .then(() => {
+        loadCategories();
+        loadTasks(); // Pour éviter des tâches orphelines
+      })
+      .catch(() => alert("Erreur suppression catégorie"));
+  };
+
+  // Ajouter une tâche
   const addTask = (data) => {
     setTaskErrors({});
-    // data: { description, category_id }
+
     createTask({
       description: data.description,
-      category: data.category_id, 
+      category: data.category_id,
     })
-      .then((res) => {
-        setTasks([...tasks, res.data]);
-        console.log("task ajoutée"); 
-      })
+      .then((res) => setTasks([...tasks, res.data]))
       .catch((e) => {
-        if (e.response && e.response.status === 400) {
+        if (e.response?.status === 400) {
           setTaskErrors(e.response.data);
         } else {
           alert("Erreur ajout tâche");
@@ -73,56 +83,55 @@ export default function App() {
       });
   };
 
-  // cocher / décocher
+  // Cocher / décocher
   const toggleTask = (task) => {
     patchTask(task.id, { is_completed: !task.is_completed })
       .then((res) => {
-        const updated = tasks.map((t) => (t.id === task.id ? res.data : t));
-        setTasks(updated);
+        setTasks(tasks.map((t) => (t.id === task.id ? res.data : t)));
       })
       .catch(() => alert("Erreur mise à jour"));
   };
 
-  // supprimer
+  // Supprimer une tâche
   const removeTask = (id) => {
     deleteTask(id)
       .then(() => {
         setTasks(tasks.filter((t) => t.id !== id));
       })
-      .catch(() => alert("Erreur suppression"));
+      .catch(() => alert("Erreur suppression tâche"));
   };
 
-  // filtre simple
-  let shown = tasks;
-  if (filterCat !== "") {
-    shown = tasks.filter((t) => String(t.category) === String(filterCat));
-  }
+  // Filtre par catégorie
+  const shownTasks =
+    filterCat === ""
+      ? tasks
+      : tasks.filter((t) => String(t.category) === String(filterCat));
 
   return (
     <div className="app-container">
       <h1>Ma To-Do List</h1>
 
-      {/* ajout catégorie */}
+      {/* Formulaire ajout catégorie */}
       <CategoryForm onAddCategory={addCategory} errors={catErrors} />
 
-      {/* filtre */}
-      <select
-        className="category-select"
-        value={filterCat}
-        onChange={(e) => setFilterCat(e.target.value)}
-      >
-        <option value="">Toutes les catégories</option>
-        {cats.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
+      {/* Zone contenant Select + TaskForm */}
+      <div className="top-controls">
+        <CategorySelector
+          categories={cats}
+          selected={filterCat}
+          onChange={setFilterCat}
+          onDelete={handleDeleteCategory}
+        />
 
-      {/* ajout tâche */}
-      <TaskForm categories={cats} onAddTask={addTask} errors={taskErrors} />
+        <TaskForm categories={cats} onAddTask={addTask} errors={taskErrors} />
+      </div>
 
-      <TaskList tasks={shown} onToggle={toggleTask} onDelete={removeTask} />
+      {/* Liste des tâches */}
+      <TaskList
+        tasks={shownTasks}
+        onToggle={toggleTask}
+        onDelete={removeTask}
+      />
     </div>
   );
 }
