@@ -1,28 +1,44 @@
 from .base import *
-import dj_database_url
 import os
+import dj_database_url
 
 DEBUG = False
+SECRET_KEY = os.environ.get("SECRET_KEY", "")
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-
-ALLOWED_HOSTS = ["*"]  
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
 
 DATABASES = {
-    "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL", ""),
         conn_max_age=600,
-        ssl_require=True
+        ssl_require=True,
     )
 }
 
-# Static files
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
-# Whitenoise
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+CORS_ALLOW_CREDENTIALS = False
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+
+# === Force correct production settings ===
+ALLOWED_HOSTS = ["todolist-examen-deploiement.onrender.com"]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://todolist-examen-deploiement.vercel.app"
+]
