@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -9,7 +9,8 @@ export const api = axios.create({
 
 // Categories
 export const fetchCategories = () => api.get("/api/categories/");
-export const createCategory = (payload) => api.post("/api/categories/", payload);
+export const createCategory = (payload) =>
+  api.post("/api/categories/", payload);
 
 // Tasks
 export const fetchTasks = (params) => api.get("/api/tasks/", { params });
