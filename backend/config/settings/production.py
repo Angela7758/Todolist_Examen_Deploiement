@@ -32,3 +32,13 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = False
+
+
+# === Force correct production settings ===
+ALLOWED_HOSTS = ["todolist-examen-deploiement.onrender.com"]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://todolist-examen-deploiement.vercel.app"
+]
