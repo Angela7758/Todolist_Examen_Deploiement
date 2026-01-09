@@ -1,50 +1,28 @@
 from .base import *
-import os
 import dj_database_url
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
+import os
 
 DEBUG = False
 
-# Clé secrète Django → définie dans les variables d'environnement Render
-SECRET_KEY = os.environ.get("SECRET_KEY", "")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
-# Hôtes autorisés → Render domain par variable d'env
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get("ALLOWED_HOSTS", "").split(",")
-    if host.strip()
-]
+ALLOWED_HOSTS = ["*"]  
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL", ""),
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=True
     )
 }
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
-    if origin.strip()
-]
+# Static files
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-# CSRF (important pour POST / DELETE depuis Vercel)
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
-    if origin.strip()
-]
+# Whitenoise
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-CORS_ALLOW_CREDENTIALS = False
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
-
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()],
-        traces_sample_rate=0.2,
-        send_default_pii=False,
-    )
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
