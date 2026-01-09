@@ -1,12 +1,21 @@
-from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import path, include
-
-def health_view(request):
-    return JsonResponse({"status": "ok"})
+from django.urls import path
+from .views import (
+    categories_view,
+    category_detail_view,
+    tasks_view,
+    task_detail_view,
+    health_view,
+)
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("categories/", categories_view),
+
+    # supprimer une catégorie
+    path("categories/<int:pk>/", category_detail_view),
+
+    path("tasks/", tasks_view),
+
+    path("tasks/<int:pk>/", task_detail_view),
+
     path("health/", health_view),
-    path("api/", include("todo.urls")),
 ]
